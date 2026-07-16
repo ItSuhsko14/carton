@@ -29,7 +29,7 @@ export function TemplateGallery({ onSelectTemplate }: TemplateGalleryProps) {
         }
       } catch {
         if (!isCancelled) {
-          setErrorMessage("Could not load templates. Please try again.");
+          setErrorMessage("Не вдалося завантажити шаблони. Спробуйте ще раз.");
         }
       } finally {
         if (!isCancelled) {
@@ -46,7 +46,7 @@ export function TemplateGallery({ onSelectTemplate }: TemplateGalleryProps) {
   }, []);
 
   if (isLoading) {
-    return <p className="text-zinc-500">Loading templates…</p>;
+    return <p className="text-zinc-500">Завантаження шаблонів…</p>;
   }
 
   if (errorMessage) {
@@ -54,12 +54,12 @@ export function TemplateGallery({ onSelectTemplate }: TemplateGalleryProps) {
   }
 
   if (templates.length === 0) {
-    return <p className="text-zinc-500">No templates available.</p>;
+    return <p className="text-zinc-500">Немає доступних шаблонів.</p>;
   }
 
   return (
     <div>
-      <h2 className="mb-4 text-lg font-medium">Choose a template</h2>
+      <h2 className="mb-4 text-lg font-medium">Оберіть шаблон</h2>
       <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         {templates.map((template) => (
           <li key={template.id}>
@@ -70,7 +70,7 @@ export function TemplateGallery({ onSelectTemplate }: TemplateGalleryProps) {
             >
               <img
                 src={template.imageUrl}
-                alt={`Template ${template.id}`}
+                alt={`Шаблон ${template.id}`}
                 className="aspect-square w-full object-cover"
               />
             </button>

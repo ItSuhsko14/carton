@@ -40,7 +40,7 @@ export function SignEditor({ template, onBack }: SignEditorProps) {
       });
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Something went wrong.";
+        error instanceof Error ? error.message : "Щось пішло не так.";
       setErrorMessage(message);
     } finally {
       setIsGenerating(false);
@@ -57,11 +57,11 @@ export function SignEditor({ template, onBack }: SignEditorProps) {
           onClick={onBack}
           className="self-start text-sm font-medium text-zinc-600 underline underline-offset-4 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
         >
-          Back to templates
+          Назад до шаблонів
         </button>
 
         <label htmlFor="sign-text" className="text-sm font-medium">
-          Sign text
+          Текст плаката
         </label>
         <textarea
           id="sign-text"
@@ -69,14 +69,14 @@ export function SignEditor({ template, onBack }: SignEditorProps) {
           maxLength={MAX_TEXT_LENGTH}
           onChange={(event) => setSignText(event.target.value)}
           rows={5}
-          placeholder="Type your message…"
+          placeholder="Введіть текст…"
           className="w-full resize-y rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base focus:border-zinc-900 focus:outline-none dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-100"
         />
         <p className="text-right text-sm text-zinc-500">
-          {remainingCharacters} characters left
+          Залишилось символів: {remainingCharacters}
         </p>
 
-        <span className="text-sm font-medium">Font</span>
+        <span className="text-sm font-medium">Шрифт</span>
         <div className="flex flex-wrap gap-2">
           {FONT_CHOICES.map((fontChoice) => (
             <button
@@ -100,19 +100,19 @@ export function SignEditor({ template, onBack }: SignEditorProps) {
           disabled={isGenerating || signText.trim().length === 0}
           className="rounded-lg bg-zinc-900 px-4 py-2 font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
         >
-          {isGenerating ? "Generating…" : "Generate"}
+          {isGenerating ? "Генерування…" : "Згенерувати"}
         </button>
 
         {errorMessage && <p className="text-red-600">{errorMessage}</p>}
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-medium">Preview</h2>
+        <h2 className="text-lg font-medium">Попередній перегляд</h2>
         {previewUrl ? (
           <>
             <img
               src={previewUrl}
-              alt="Generated protest sign"
+              alt="Згенерований протестний плакат"
               className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800"
             />
             <a
@@ -120,12 +120,12 @@ export function SignEditor({ template, onBack }: SignEditorProps) {
               download={DOWNLOAD_FILENAME}
               className="self-start rounded-lg border border-zinc-900 px-4 py-2 font-medium text-zinc-900 hover:bg-zinc-900 hover:text-white dark:border-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-100 dark:hover:text-zinc-900"
             >
-              Download PNG
+              Завантажити PNG
             </a>
           </>
         ) : (
           <div className="flex aspect-square w-full items-center justify-center rounded-lg border border-dashed border-zinc-300 text-zinc-500 dark:border-zinc-700">
-            Your generated sign will appear here.
+Тут з’явиться ваш згенерований плакат.
           </div>
         )}
       </div>
