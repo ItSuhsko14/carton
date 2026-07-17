@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Генератор протестних плакатів",
+  title: "Генератор протестних картонок",
   description: "Створення зображень протестних плакатів із шаблонів.",
 };
 
