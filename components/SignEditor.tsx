@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { TemplateMeta } from "@/types/template";
 import { FONT_CHOICES } from "@/lib/font-list";
 import { generateSignBlob } from "@/lib/canvas-generate";
@@ -27,6 +27,21 @@ export function SignEditor({ template, onBack }: SignEditorProps) {
     setSignText(idea.slice(0, MAX_TEXT_LENGTH));
     setIsIdeaPickerOpen(false);
   }
+
+  useEffect(() => {
+    if (!isIdeaPickerOpen) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsIdeaPickerOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isIdeaPickerOpen]);
 
   async function handleGenerate() {
     setIsGenerating(true);
