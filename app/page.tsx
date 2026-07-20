@@ -5,6 +5,7 @@ import type { TemplateMeta } from "@/types/template";
 import { AppHeader } from "@/components/AppHeader";
 import { TemplateGallery } from "@/components/TemplateGallery";
 import { SignEditor } from "@/components/SignEditor";
+import { AboutContent } from "@/components/AboutContent";
 
 export default function Home() {
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateMeta | null>(
@@ -21,7 +22,10 @@ export default function Home() {
             onBack={() => setSelectedTemplate(null)}
           />
         ) : (
-          <TemplateGallery onSelectTemplate={setSelectedTemplate} />
+          <>
+            <TemplateGallery onSelectTemplate={setSelectedTemplate} />
+            <AboutContent />
+          </>
         )}
       </main>
     </div>
