@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { TemplateMeta } from "@/types/template";
 import { FONT_CHOICES } from "@/lib/font-list";
 import { generateSignBlob } from "@/lib/canvas-generate";
+import { TEXT_IDEA_CATEGORIES } from "@/lib/text-ideas";
 
 interface SignEditorProps {
   template: TemplateMeta;
@@ -19,6 +20,13 @@ export function SignEditor({ template, onBack }: SignEditorProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isIdeasOpen, setIsIdeasOpen] = useState(false);
+  const [isIdeaPickerOpen, setIsIdeaPickerOpen] = useState(false);
+
+  function handleSelectIdea(idea: string) {
+    setSignText(idea.slice(0, MAX_TEXT_LENGTH));
+    setIsIdeaPickerOpen(false);
+  }
 
   async function handleGenerate() {
     setIsGenerating(true);
@@ -60,9 +68,18 @@ export function SignEditor({ template, onBack }: SignEditorProps) {
           Назад до шаблонів
         </button>
 
-        <label htmlFor="sign-text" className="text-sm font-medium">
-          Текст плаката
-        </label>
+        <div className="flex items-center justify-between">
+          <label htmlFor="sign-text" className="text-sm font-medium">
+            Текст плаката
+          </label>
+          <button
+            type="button"
+            onClick={() => setIsIdeaPickerOpen(true)}
+            className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+          >
+            Знайти ідею тексту
+          </button>
+        </div>
         <textarea
           id="sign-text"
           value={signText}
@@ -104,6 +121,36 @@ export function SignEditor({ template, onBack }: SignEditorProps) {
         </button>
 
         {errorMessage && <p className="text-red-600">{errorMessage}</p>}
+
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => setIsIdeasOpen((currentIsOpen) => !currentIsOpen)}
+            className="self-start text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+          >
+            {isIdeasOpen
+              ? "Сховати ідеї"
+              : "Шукати ідеї картонок на kartonky.propellercrew.com"}
+          </button>
+
+          {isIdeasOpen && (
+            <div className="flex flex-col gap-2">
+              <iframe
+                src="https://kartonky.propellercrew.com/"
+                title="Ідеї для тексту картонок"
+                className="h-96 w-full rounded-lg border border-zinc-300 dark:border-zinc-700"
+              />
+              <a
+                href="https://kartonky.propellercrew.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="self-start text-sm text-blue-600 hover:underline dark:text-blue-400"
+              >
+                Відкрити в новій вкладці: kartonky.propellercrew.com
+              </a>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -129,6 +176,53 @@ export function SignEditor({ template, onBack }: SignEditorProps) {
           </div>
         )}
       </div>
+
+      {isIdeaPickerOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4"
+          onClick={() => setIsIdeaPickerOpen(false)}
+        >
+          <div
+            className="my-8 w-full max-w-2xl rounded-lg bg-white p-6 shadow-xl dark:bg-zinc-900"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-medium">Ідеї для тексту</h2>
+              <button
+                type="button"
+                onClick={() => setIsIdeaPickerOpen(false)}
+                aria-label="Закрити"
+                className="text-2xl leading-none text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-6">
+              {TEXT_IDEA_CATEGORIES.map((category) => (
+                <div key={category.title}>
+                  <h3 className="text-sm font-medium text-zinc-500">
+                    {category.title}
+                  </h3>
+                  <ul className="mt-2 flex flex-col gap-1">
+                    {category.ideas.map((idea) => (
+                      <li key={idea}>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectIdea(idea)}
+                          className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        >
+                          {idea}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
