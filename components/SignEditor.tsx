@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { TemplateMeta } from "@/types/template";
-import { FONT_CHOICES } from "@/lib/font-list";
+import { DEFAULT_FONT_ID } from "@/lib/font-list";
 import { generateSignBlob } from "@/lib/canvas-generate";
 import { TEXT_IDEA_CATEGORIES } from "@/lib/text-ideas";
 
@@ -13,19 +13,24 @@ interface SignEditorProps {
 
 const MAX_TEXT_LENGTH = 200;
 const DOWNLOAD_FILENAME = "protest-sign.png";
+const AUTO_GENERATE_DELAY_MS = 2000;
 
 export function SignEditor({ template, onBack }: SignEditorProps) {
   const [signText, setSignText] = useState("");
-  const [selectedFontId, setSelectedFontId] = useState(FONT_CHOICES[0].id);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [generatedSignature, setGeneratedSignature] = useState<string | null>(
+    null,
+  );
   const [isIdeasOpen, setIsIdeasOpen] = useState(false);
   const [isIdeaPickerOpen, setIsIdeaPickerOpen] = useState(false);
 
   function handleSelectIdea(idea: string) {
-    setSignText(idea.slice(0, MAX_TEXT_LENGTH));
+    const nextText = idea.slice(0, MAX_TEXT_LENGTH);
+    setSignText(nextText);
     setIsIdeaPickerOpen(false);
+    void generatePreview(nextText);
   }
 
   useEffect(() => {
@@ -43,34 +48,63 @@ export function SignEditor({ template, onBack }: SignEditorProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isIdeaPickerOpen]);
 
-  async function handleGenerate() {
-    setIsGenerating(true);
-    setErrorMessage(null);
+  const generatePreview = useCallback(
+    async (textOverride?: string) => {
+      setIsGenerating(true);
+      setErrorMessage(null);
 
-    try {
-      const imageBlob = await generateSignBlob(
-        template,
-        signText,
-        selectedFontId,
-      );
-      const nextPreviewUrl = URL.createObjectURL(imageBlob);
+      try {
+        const textToRender = textOverride ?? signText;
+        const imageBlob = await generateSignBlob(
+          template,
+          textToRender,
+          DEFAULT_FONT_ID,
+        );
+        const nextPreviewUrl = URL.createObjectURL(imageBlob);
 
-      setPreviewUrl((currentPreviewUrl) => {
-        if (currentPreviewUrl) {
-          URL.revokeObjectURL(currentPreviewUrl);
-        }
-        return nextPreviewUrl;
-      });
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Щось пішло не так.";
-      setErrorMessage(message);
-    } finally {
-      setIsGenerating(false);
+        setPreviewUrl((currentPreviewUrl) => {
+          if (currentPreviewUrl) {
+            URL.revokeObjectURL(currentPreviewUrl);
+          }
+          return nextPreviewUrl;
+        });
+        setGeneratedSignature(`${template.id}|${textToRender}`);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Щось пішло не так.";
+        setErrorMessage(message);
+      } finally {
+        setIsGenerating(false);
+      }
+    },
+    [template, signText],
+  );
+
+  useEffect(() => {
+    if (signText.trim().length === 0) {
+      return;
     }
-  }
+
+    const debounceTimer = setTimeout(() => {
+      void generatePreview();
+    }, AUTO_GENERATE_DELAY_MS);
+
+    return () => clearTimeout(debounceTimer);
+  }, [generatePreview, signText]);
 
   const remainingCharacters = MAX_TEXT_LENGTH - signText.length;
+  const currentSignature = `${template.id}|${signText}`;
+  const isAlreadyGenerated = currentSignature === generatedSignature;
+  const hasText = signText.trim().length > 0;
+
+  let generationStatus = "";
+  if (isGenerating) {
+    generationStatus = "Генеруємо зображення…";
+  } else if (hasText && !isAlreadyGenerated) {
+    generationStatus = "Оновимо зображення за мить…";
+  } else if (isAlreadyGenerated) {
+    generationStatus = "Зображення оновлено";
+  }
 
   return (
     <div className="grid gap-8 md:grid-cols-2">
@@ -83,18 +117,48 @@ export function SignEditor({ template, onBack }: SignEditorProps) {
           Назад до шаблонів
         </button>
 
-        <div className="flex items-center justify-between">
-          <label htmlFor="sign-text" className="text-sm font-medium">
-            Текст плаката
-          </label>
-          <button
-            type="button"
-            onClick={() => setIsIdeaPickerOpen(true)}
-            className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
-          >
-            Знайти ідею тексту
-          </button>
-        </div>
+        <label
+          htmlFor="sign-text"
+          className="mt-2 text-xl font-semibold text-zinc-900 dark:text-zinc-100"
+        >
+          Текст для картонки
+        </label>
+
+        <button
+          type="button"
+          onClick={() => setIsIdeaPickerOpen(true)}
+          className="self-start text-left text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+        >
+          Знайти ідею тексту
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsIdeasOpen((currentIsOpen) => !currentIsOpen)}
+          className="self-start text-left text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+        >
+          {isIdeasOpen
+            ? "Сховати галерею картонок kartonky.propellercrew.com"
+            : "Підгледіти ідеї в галереї картонок kartonky.propellercrew.com"}
+        </button>
+
+        {isIdeasOpen && (
+          <div className="flex flex-col gap-2">
+            <iframe
+              src="https://kartonky.propellercrew.com/"
+              title="Ідеї для тексту картонок"
+              className="h-96 w-full rounded-lg border border-zinc-300 dark:border-zinc-700"
+            />
+            <a
+              href="https://kartonky.propellercrew.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="self-start text-sm text-blue-600 hover:underline dark:text-blue-400"
+            >
+              Відкрити в новій вкладці: kartonky.propellercrew.com
+            </a>
+          </div>
+        )}
+
         <textarea
           id="sign-text"
           value={signText}
@@ -108,82 +172,31 @@ export function SignEditor({ template, onBack }: SignEditorProps) {
           Залишилось символів: {remainingCharacters}
         </p>
 
-        <span className="text-sm font-medium">Шрифт</span>
-        <div className="flex flex-wrap gap-2">
-          {FONT_CHOICES.map((fontChoice) => (
-            <button
-              key={fontChoice.id}
-              type="button"
-              onClick={() => setSelectedFontId(fontChoice.id)}
-              className={
-                selectedFontId === fontChoice.id
-                  ? "rounded-full bg-zinc-900 px-3 py-1 text-sm text-white dark:bg-zinc-100 dark:text-zinc-900"
-                  : "rounded-full border border-zinc-300 px-3 py-1 text-sm text-zinc-700 hover:border-zinc-500 dark:border-zinc-700 dark:text-zinc-300"
-              }
-            >
-              {fontChoice.label}
-            </button>
-          ))}
+        <div className="flex h-6 items-center gap-2 text-sm text-zinc-500">
+          {isGenerating && (
+            <span className="h-3 w-3 animate-spin rounded-full border-2 border-zinc-400 border-t-transparent" />
+          )}
+          <span>{generationStatus}</span>
         </div>
-
-        <button
-          type="button"
-          onClick={handleGenerate}
-          disabled={isGenerating || signText.trim().length === 0}
-          className="rounded-lg bg-zinc-900 px-4 py-2 font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
-        >
-          {isGenerating ? "Генерування…" : "Згенерувати"}
-        </button>
 
         {errorMessage && <p className="text-red-600">{errorMessage}</p>}
-
-        <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => setIsIdeasOpen((currentIsOpen) => !currentIsOpen)}
-            className="self-start text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
-          >
-            {isIdeasOpen
-              ? "Сховати ідеї"
-              : "Шукати ідеї картонок на kartonky.propellercrew.com"}
-          </button>
-
-          {isIdeasOpen && (
-            <div className="flex flex-col gap-2">
-              <iframe
-                src="https://kartonky.propellercrew.com/"
-                title="Ідеї для тексту картонок"
-                className="h-96 w-full rounded-lg border border-zinc-300 dark:border-zinc-700"
-              />
-              <a
-                href="https://kartonky.propellercrew.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="self-start text-sm text-blue-600 hover:underline dark:text-blue-400"
-              >
-                Відкрити в новій вкладці: kartonky.propellercrew.com
-              </a>
-            </div>
-          )}
-        </div>
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="text-lg font-medium">Попередній перегляд</h2>
         {previewUrl ? (
           <>
-            <img
-              src={previewUrl}
-              alt="Згенерований протестний плакат"
-              className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800"
-            />
             <a
               href={previewUrl}
               download={DOWNLOAD_FILENAME}
               className="self-start rounded-lg border border-zinc-900 px-4 py-2 font-medium text-zinc-900 hover:bg-zinc-900 hover:text-white dark:border-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-100 dark:hover:text-zinc-900"
             >
-              Завантажити PNG
+              Завантажити зображення
             </a>
+            <img
+              src={previewUrl}
+              alt="Згенерований протестний плакат"
+              className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800"
+            />
           </>
         ) : (
           <div className="flex aspect-square w-full items-center justify-center rounded-lg border border-dashed border-zinc-300 text-zinc-500 dark:border-zinc-700">
