@@ -59,7 +59,7 @@ export function TemplateGallery({ onSelectTemplate }: TemplateGalleryProps) {
 
   return (
     <div>
-      <h2 className="mb-4 text-lg font-medium">Оберіть шаблон</h2>
+      <h2 className="mb-4 text-lg font-medium">Оберіть картонку</h2>
       <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         {templates.map((template) => (
           <li key={template.id}>
