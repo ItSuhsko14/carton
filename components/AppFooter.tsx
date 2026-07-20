@@ -21,6 +21,15 @@ export function AppFooter() {
           https://t.me/teplonaperedovu
         </a>
 
+        <a
+          href="https://kartonky.propellercrew.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+        >
+          Ідеї для тексту картонок: kartonky.propellercrew.com
+        </a>
+
         <div className="mt-2 flex flex-col items-center gap-2">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
             Підпишись на автора
