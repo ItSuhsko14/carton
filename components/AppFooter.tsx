@@ -1,3 +1,5 @@
+import { ShareAppButton } from "./ShareAppButton";
+
 export function AppFooter() {
   return (
     <footer className="mt-auto border-t border-zinc-200 dark:border-zinc-800">
@@ -29,6 +31,8 @@ export function AppFooter() {
         >
           Ідеї для тексту картонок: kartonky.propellercrew.com
         </a>
+
+        <ShareAppButton />
 
         <div className="mt-2 flex flex-col items-center gap-2">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">

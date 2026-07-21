@@ -5,6 +5,20 @@ import type { TemplateMeta } from "@/types/template";
 import { DEFAULT_FONT_ID } from "@/lib/font-list";
 import { generateSignBlob } from "@/lib/canvas-generate";
 import { TEXT_IDEA_CATEGORIES } from "@/lib/text-ideas";
+import {
+  canShareImageFile,
+  canCopyImage,
+  shareImageFile,
+  copyImageToClipboard,
+  shareAppLink,
+} from "@/lib/share";
+import {
+  DownloadIcon,
+  ShareIcon,
+  CopyIcon,
+  CheckIcon,
+  InviteFriendsIcon,
+} from "./icons";
 
 interface SignEditorProps {
   template: TemplateMeta;
@@ -18,6 +32,9 @@ const AUTO_GENERATE_DELAY_MS = 2000;
 export function SignEditor({ template, onBack }: SignEditorProps) {
   const [signText, setSignText] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [generatedFile, setGeneratedFile] = useState<File | null>(null);
+  const [isImageCopied, setIsImageCopied] = useState(false);
+  const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [generatedSignature, setGeneratedSignature] = useState<string | null>(
@@ -62,6 +79,9 @@ export function SignEditor({ template, onBack }: SignEditorProps) {
         );
         const nextPreviewUrl = URL.createObjectURL(imageBlob);
 
+        setGeneratedFile(
+          new File([imageBlob], DOWNLOAD_FILENAME, { type: imageBlob.type }),
+        );
         setPreviewUrl((currentPreviewUrl) => {
           if (currentPreviewUrl) {
             URL.revokeObjectURL(currentPreviewUrl);
@@ -104,6 +124,44 @@ export function SignEditor({ template, onBack }: SignEditorProps) {
     generationStatus = "Оновимо зображення за мить…";
   } else if (isAlreadyGenerated) {
     generationStatus = "Зображення оновлено";
+  }
+
+  const canShareGenerated =
+    generatedFile !== null && canShareImageFile(generatedFile);
+  const canCopyGenerated = generatedFile !== null && canCopyImage();
+
+  async function handleShareImage() {
+    if (!generatedFile) {
+      return;
+    }
+    try {
+      await shareImageFile(generatedFile);
+    } catch {
+      setErrorMessage("Не вдалося поділитися зображенням.");
+    }
+  }
+
+  async function handleCopyImage() {
+    if (!generatedFile) {
+      return;
+    }
+    try {
+      await copyImageToClipboard(generatedFile);
+      setIsImageCopied(true);
+      setTimeout(() => setIsImageCopied(false), 2000);
+    } catch {
+      setErrorMessage("Не вдалося скопіювати зображення.");
+    }
+  }
+
+  async function handleShareAppLink() {
+    const result = await shareAppLink();
+    if (result === "copied") {
+      setIsLinkCopied(true);
+      setTimeout(() => setIsLinkCopied(false), 2000);
+    } else if (result === "unavailable") {
+      setErrorMessage("Не вдалося поділитися посиланням.");
+    }
   }
 
   return (
@@ -185,13 +243,52 @@ export function SignEditor({ template, onBack }: SignEditorProps) {
       <div className="flex flex-col gap-4">
         {previewUrl ? (
           <>
-            <a
-              href={previewUrl}
-              download={DOWNLOAD_FILENAME}
-              className="self-start rounded-lg border border-zinc-900 px-4 py-2 font-medium text-zinc-900 hover:bg-zinc-900 hover:text-white dark:border-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-100 dark:hover:text-zinc-900"
-            >
-              Завантажити зображення
-            </a>
+            <div className="flex flex-wrap items-center gap-2">
+              <a
+                href={previewUrl}
+                download={DOWNLOAD_FILENAME}
+                title="Завантажити зображення"
+                aria-label="Завантажити зображення"
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white dark:border-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-100 dark:hover:text-zinc-900"
+              >
+                <DownloadIcon />
+              </a>
+              {canShareGenerated && (
+                <button
+                  type="button"
+                  onClick={handleShareImage}
+                  title="Поділитися зображенням"
+                  aria-label="Поділитися зображенням"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white dark:border-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-100 dark:hover:text-zinc-900"
+                >
+                  <ShareIcon />
+                </button>
+              )}
+              {canCopyGenerated && (
+                <button
+                  type="button"
+                  onClick={handleCopyImage}
+                  title={isImageCopied ? "Скопійовано" : "Скопіювати зображення"}
+                  aria-label={
+                    isImageCopied ? "Скопійовано" : "Скопіювати зображення"
+                  }
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white dark:border-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-100 dark:hover:text-zinc-900"
+                >
+                  {isImageCopied ? <CheckIcon /> : <CopyIcon />}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleShareAppLink}
+                title={isLinkCopied ? "Посилання скопійовано" : "Розкажи про нас друзям"}
+                aria-label={
+                  isLinkCopied ? "Посилання скопійовано" : "Розкажи про нас друзям"
+                }
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-zinc-900 text-zinc-900 hover:bg-zinc-900 hover:text-white dark:border-zinc-100 dark:text-zinc-100 dark:hover:bg-zinc-100 dark:hover:text-zinc-900"
+              >
+                {isLinkCopied ? <CheckIcon /> : <InviteFriendsIcon />}
+              </button>
+            </div>
             <img
               src={previewUrl}
               alt="Згенерований протестний плакат"
